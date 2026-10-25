@@ -1,0 +1,198 @@
+Question: What are Isabella Harris' grades in each course? 
+
+SQL: SELECT c.subject, c.grade_level, cs.grade
+FROM student s
+JOIN course_student cs ON cs.student_id = s.student_id
+JOIN course c ON c.course_id = cs.course_id
+WHERE s.full_name = 'Isabella Harris'
+ORDER BY c.subject;
+
+Answer: Isabella Harris earned an A- in Piano Fundamentals (grade 5 level), an A in Pre-Algebra (grade 7 level), and an A in Spanish I (grade 8 level).
+
+Question: Who is the teacher of Biology?
+
+SQL: SELECT DISTINCT t.full_name
+FROM teacher t
+JOIN course_teacher ct ON ct.teacher_id = t.teacher_id
+JOIN course c ON c.course_id = ct.course_id
+WHERE c.subject = 'Biology'
+ORDER BY t.full_name;
+
+Answer: Biology is taught by David Nguyen.
+
+Question: Who has the greatest grade average?
+
+SQL: WITH grade_points AS (
+    SELECT cs.student_id,
+           CASE UPPER(TRIM(cs.grade))
+               WHEN 'A+' THEN 4.0
+               WHEN 'A'  THEN 4.0
+               WHEN 'A-' THEN 3.7
+               WHEN 'B+' THEN 3.3
+               WHEN 'B'  THEN 3.0
+               WHEN 'B-' THEN 2.7
+               WHEN 'C+' THEN 2.3
+               WHEN 'C'  THEN 2.0
+               WHEN 'C-' THEN 1.7
+               WHEN 'D+' THEN 1.3
+               WHEN 'D'  THEN 1.0
+               WHEN 'D-' THEN 0.7
+               WHEN 'F'  THEN 0.0
+           END AS points
+    FROM course_student cs
+    WHERE cs.grade IS NOT NULL
+),
+student_avg AS (
+    SELECT student_id, AVG(points) AS gpa, COUNT(points) AS graded_courses
+    FROM grade_points
+    WHERE points IS NOT NULL
+    GROUP BY student_id
+)
+SELECT s.student_id, s.full_name, ROUND(sa.gpa, 2) AS grade_average, sa.graded_courses
+FROM student_avg sa
+JOIN student s ON s.student_id = sa.student_id
+WHERE sa.gpa = (SELECT MAX(gpa) FROM student_avg)
+ORDER BY s.full_name;
+
+Answer: Isabella Harris has the highest grade average, a 3.9 on a 4.0 scale across her 3 graded courses.
+
+Question: Which course has the most students
+
+SQL: SELECT c.course_id, c.subject, c.grade_level, COUNT(cs.student_id) AS student_count
+FROM course c
+JOIN course_student cs ON cs.course_id = c.course_id
+GROUP BY c.course_id, c.subject, c.grade_level
+HAVING COUNT(cs.student_id) = (
+    SELECT MAX(cnt)
+    FROM (
+        SELECT COUNT(*) AS cnt
+        FROM course_student
+        GROUP BY course_id
+    )
+)
+ORDER BY c.subject;
+
+Answer: There's a four-way tie for the most students, with 7 each: Drawing & Painting (grade 6), Earth Science (grade 6), Physical Education (grade 7), and Piano Fundamentals (grade 5).       
+
+Question: Which is the earliest lesson
+
+SQL: SELECT lesson_id, title, topic, lesson_date
+FROM lesson_plan
+WHERE lesson_date = (SELECT MIN(lesson_date) FROM lesson_plan)  
+ORDER BY lesson_id;
+
+Answer: There's a tie for the earliest lesson: both "Solving One-Step Equations" (Linear Equations) and "Greetings and Introductions" (Vocabulary) are scheduled for September 8, 2026.
+
+Question: quit
+PS C:\Users\kenei\Documents\CS 452> python app.py --strategy zero-shot
+Homeschool co-op Q&A (zero-shot). Type 'quit' to exit.
+
+Question: Who has the greatest grade average?
+
+SQL: WITH graded AS (
+    SELECT cs.student_id,
+           CASE UPPER(TRIM(cs.grade))
+               WHEN 'A+' THEN 4.0 WHEN 'A'  THEN 4.0 WHEN 'A-' THEN 3.7
+               WHEN 'B+' THEN 3.3 WHEN 'B'  THEN 3.0 WHEN 'B-' THEN 2.7
+               WHEN 'C+' THEN 2.3 WHEN 'C'  THEN 2.0 WHEN 'C-' THEN 1.7
+               WHEN 'D+' THEN 1.3 WHEN 'D'  THEN 1.0 WHEN 'D-' THEN 0.7
+               WHEN 'F'  THEN 0.0
+           END AS points
+    FROM course_student cs
+    WHERE cs.grade IS NOT NULL
+),
+averages AS (
+    SELECT student_id, AVG(points) AS gpa, COUNT(points) AS graded_courses
+    FROM graded
+    WHERE points IS NOT NULL
+    GROUP BY student_id
+)
+SELECT s.student_id, s.full_name, s.grade_level,
+       ROUND(a.gpa, 2) AS grade_average, a.graded_courses       
+FROM averages a
+JOIN student s ON s.student_id = a.student_id
+WHERE a.gpa = (SELECT MAX(gpa) FROM averages)
+ORDER BY s.full_name;
+
+Answer: Isabella Harris, an 8th grader, has the highest grade average in the co-op at 3.9 on a 4.0 scale, across 3 graded courses.
+
+Question:
+Question: Which course has the highest grades across it
+
+SQL: WITH graded AS (
+    SELECT
+        cs.course_id,
+        CASE UPPER(TRIM(cs.grade))
+            WHEN 'A+' THEN 4.3
+            WHEN 'A'  THEN 4.0
+            WHEN 'A-' THEN 3.7
+            WHEN 'B+' THEN 3.3
+            WHEN 'B'  THEN 3.0
+            WHEN 'B-' THEN 2.7
+            WHEN 'C+' THEN 2.3
+            WHEN 'C'  THEN 2.0
+            WHEN 'C-' THEN 1.7
+            WHEN 'D+' THEN 1.3
+            WHEN 'D'  THEN 1.0
+            WHEN 'D-' THEN 0.7
+            WHEN 'F'  THEN 0.0
+        END AS points
+    FROM course_student cs
+    WHERE cs.grade IS NOT NULL
+),
+course_avg AS (
+    SELECT
+        course_id,
+        AVG(points) AS avg_grade_points,
+        COUNT(points) AS graded_students
+    FROM graded
+    WHERE points IS NOT NULL
+    GROUP BY course_id
+)
+SELECT
+    c.course_id,
+    c.subject,
+    c.grade_level,
+    ROUND(ca.avg_grade_points, 2) AS avg_grade_points,
+    ca.graded_students
+FROM course_avg ca
+JOIN course c ON c.course_id = ca.course_id
+WHERE ca.avg_grade_points = (SELECT MAX(avg_grade_points) FROM course_avg)
+ORDER BY c.subject, c.grade_level;
+
+Answer: The course with the highest grades is 7th grade Physical Education, where the 7 graded students average about 3.71 grade points, roughly an A-. Letter grades were converted to a standard 4-point scale, where an A+ counts as 4.3, to compare courses.
+
+Question: quit
+PS C:\Users\kenei\Documents\CS 452> python app.py               
+Homeschool co-op Q&A (few-shot). Type 'quit' to exit.
+
+Question: Which teacher is the most successful so far?
+
+SQL: WITH graded AS (
+    SELECT ct.teacher_id,
+           CASE UPPER(TRIM(cs.grade))
+               WHEN 'A+' THEN 4.0 WHEN 'A'  THEN 4.0 WHEN 'A-' THEN 3.7
+               WHEN 'B+' THEN 3.3 WHEN 'B'  THEN 3.0 WHEN 'B-' THEN 2.7
+               WHEN 'C+' THEN 2.3 WHEN 'C'  THEN 2.0 WHEN 'C-' THEN 1.7
+               WHEN 'D+' THEN 1.3 WHEN 'D'  THEN 1.0 WHEN 'D-' THEN 0.7
+               WHEN 'F'  THEN 0.0
+           END AS grade_points
+    FROM course_teacher ct
+    JOIN course_student cs ON cs.course_id = ct.course_id       
+    WHERE cs.grade IS NOT NULL
+),
+teacher_stats AS (
+    SELECT teacher_id,
+           ROUND(AVG(grade_points), 2) AS avg_gpa,
+           COUNT(grade_points) AS graded_enrollments
+    FROM graded
+    WHERE grade_points IS NOT NULL
+    GROUP BY teacher_id
+)
+SELECT t.teacher_id, t.full_name, t.subject, ts.avg_gpa, ts.graded_enrollments
+FROM teacher_stats ts
+JOIN teacher t ON t.teacher_id = ts.teacher_id
+WHERE ts.avg_gpa = (SELECT MAX(avg_gpa) FROM teacher_stats)     
+ORDER BY ts.graded_enrollments DESC, t.full_name;
+
+Answer: Measured by the average grade their students have earned, Michael Brown (Physical Education) comes out on top with a 3.71 GPA across 7 graded enrollments. Keep in mind this only reflects student grades, which can vary by subject and grading style, and 7 grades is a fairly small sample.
