@@ -165,7 +165,9 @@ ORDER BY c.subject, c.grade_level;
 Answer: The course with the highest grades is 7th grade Physical Education, where the 7 graded students average about 3.71 grade points, roughly an A-. Letter grades were converted to a standard 4-point scale, where an A+ counts as 4.3, to compare courses.
 
 Question: quit
-PS C:\Users\kenei\Documents\CS 452> python app.py               
+
+
+python app.py               
 Homeschool co-op Q&A (few-shot). Type 'quit' to exit.
 
 Question: Which teacher is the most successful so far?
