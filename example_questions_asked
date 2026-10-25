@@ -84,7 +84,9 @@ ORDER BY lesson_id;
 Answer: There's a tie for the earliest lesson: both "Solving One-Step Equations" (Linear Equations) and "Greetings and Introductions" (Vocabulary) are scheduled for September 8, 2026.
 
 Question: quit
-PS C:\Users\kenei\Documents\CS 452> python app.py --strategy zero-shot
+
+
+python app.py --strategy zero-shot
 Homeschool co-op Q&A (zero-shot). Type 'quit' to exit.
 
 Question: Who has the greatest grade average?
